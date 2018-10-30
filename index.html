@@ -61,18 +61,18 @@
     </style>
 </head>
 
-<body>
-    <div id='info'>
-
+<body>  
+    <div id="info">
+      <div id="date"></div>
     </div>
-    <div id='io'>
+    <div id="io">
 
     </div>
 
     <hr />
     <ul id="messages"></ul>
     <form action="">
-        <input id="m" autocomplete="off" />
+        <input id="m" autocomplete="on" />
         <button>Send</button>
     </form>
 
@@ -83,21 +83,50 @@
     <script src="https://cdn.jsdelivr.net/jquery/3.2.1/jquery.min.js"></script>
 
     <script>
+        if ("onhashchange" in window) {
+           console.log("Le navigateur prend en charge l'événement hashchange!"); // Ok
+        }
+         
+        
         $(function() {
+          
+            $("#info").append("<h1>Info</h1>");
+          
             $("#messages").empty();
 
-            var socket = io();
-            // var socket = io.connect('http://localhost:3000');
+            //var socket = io();
+            const socket = io.connect("https://tasteful-marten.glitch.me/"); // Ok           
+                      
+            socket.on('connect', () => {
+              console.log('Connected');
+              console.log(socket.id)
+              socket.emit('register', {appli: "BackgroundAPP", _id: socket.id});
+              
+            });
+
+            socket.on('disconnect', (reason) => {
+              console.log(`Disconnected: ${reason}`);
+            })
+          
+            socket.on('date', function(data) {
+              $('#date').text(data.date);   
+              //socket.emit('message', moment().locale('fr-ch').format("DD MMMM YYYY H:mm:ss"))
+             });
 
             $('form').submit(function() {
-                socket.emit('chat message', $('#m').val());
+                socket.emit('server chat message', $('#m').val());
                 $('#m').val('');
                 return false;
             });
-            socket.on('chat message', function(msg) {
+            socket.on('client chat message', function(msg) {
                 $('#messages').append($('<li>').text(msg));
                 window.scrollTo(0, document.body.scrollHeight);
             });
+            socket.on('client clear', function(msg) {
+                $('#messages').empty();
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+          
             //
             socket.on('info message', function(msg) {
                 // $('#messages').append($('<li>').text(msg));
